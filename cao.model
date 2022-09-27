@@ -52,7 +52,7 @@ UnicoX <- function(x){
 Varnames <- colnames(train.data[,c(1:41)])
 UniVar <- lapply(Varnames, UnicoX)
 UniVar <- ldply(UniVar,data.frame)
-######多因???
+#multivariable
 Multiname <- unique(paste0(UniVar$varname[UniVar$P.value<0.05]))
 fml <- as.formula(paste0("Surv(OS,status)~",paste0(Multiname,collapse = "+")))
 MultiCox <- coxph(fml,data = train.data)
@@ -95,13 +95,13 @@ for (k in unique(str_sub(row.names(scoxcoefficients),1,-3))) {
 train.data$cao.nomosco<-points_cal(nomoscore$formula,rd=train.data)
 validation.data$cao.nomosco<-points_cal(nomoscore$formula,rd=validation.data)
 
-###train-calibration
+#train-calibration
 dd<-datadist(train.data)
 options(datadist = 'dd')
 trainnomo<-cph(Surv(OS,status)~cao.nomosco,x=T,y=T,
                data = train.data,surv = T,time.inc = 24)
 cal <- calibrate(trainnomo, cmethod='KM', method='boot', u=24, m=100, B=1000)
-###validation-calibration
+#validation-calibration
 dd<-datadist(validation.data)
 options(datadist = 'dd')
 validationnomo<-cph(Surv(OS,status)~cao.nomosco,x=T,y=T,
@@ -126,13 +126,13 @@ lines(cal1[,c('mean.predicted',"KM")],
 
 abline(0,1, lwd = 2, lty = 3, col = c("#224444"),pch = 8)
 
-legend("topleft", #图例的位置
+legend("topleft",
        legend = c("5-year","8-year"),
        col =c("#2166AC","#B2182B"), 
        lwd = 2,
        cex = 1.2,
        bty = "n")
-####ROC
+#ROC
 roc.train <- timeROC(T = train.data$OS,delta = train.data$status,marker = train.data$cao.nomosco,cause = 1,times = c(6,12,18,24,30,36),iid = T)
 roc.validation <- timeROC(T = validation.data$OS,delta = validation.data$status,marker = validation.data$cao.nomosco,cause = 1,times = c(6,12,18,24,30,36),iid = T)
 
