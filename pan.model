@@ -1,0 +1,49 @@
+plr.data <-data.frame(all.data$patient_num,all.data$PLRnum)
+names(plr.data) <- c("patient_num","PLRnum")
+train.pan.data <- data.frame(train.data[,c(48,50,33,34,25,26,42,43)])
+train.pan.data <- merge(plr.data,train.pan.data,by="patient_num")
+train.pan.data$PLRnum <- ifelse(train.pan.data$PLRnum>258,1,0)
+train.pan.data$M<-ifelse(train.pan.data$M==1,1,2)
+validation.pan.data <- data.frame(validation.data[,c(48,50,33,34,25,26,42,43)])
+validation.pan.data <- merge(plr.data,validation.pan.data,by="patient_num")
+validation.pan.data$PLRnum <- ifelse(validation.pan.data$PLRnum>258,1,0)
+validation.pan.data$M<-ifelse(validation.pan.data$M==1,1,2)
+for (i in 2:7) {
+  a=train.pan.data[,i]
+  if(colnames(train.pan.data)[i]!="age"){
+    train.pan.data[,i] <- as.factor(train.pan.data[,i])
+  }
+}
+for (i in 2:7) {
+  a=validation.pan.data[,i]
+  if(colnames(validation.pan.data)[i]!="age"){
+    validation.pan.data[,i] <- as.factor(validation.pan.data[,i])
+  }
+}
+dd<-datadist(train.pan.data)
+options(datadist = 'dd')
+nobs<-NROW(train.pan.data)
+coxpan<-cph(Surv(OS,status)~age+N+M+PLRnum+NSE+Cyfra211,data = train.pan.data,x=T,y=T,surv = T,time.int=24)
+surv12 <- Survival(coxpan)
+surv13 <- function(x)surv12(1*6,lp=x)
+surv14 <- function(x)surv12(1*12,lp=x)
+surv15 <- function(x)surv12(1*24,lp=x)
+nompan<-nomogram(coxpan,fun=list(surv13,surv14,surv15),lp = F,
+                 funlabel=c(
+                   '24-Month survival probability'),
+                 maxscale=100,
+                 fun.at=c('0.9','0.85','0.80','0.70','0.6',
+                          '0.5','0.4','0.3','0.2','0.1'))
+pannomoscore<-formula_rd(nomogram = nompan)
+train.pan.data$pan.nomoscore<-points_cal(pannomoscore$formula,rd=train.pan.data)
+dd<-datadist(train.pan.data)
+options(datadist = 'dd')
+nobs<-NROW(train.pan.data)
+pan_roc <- timeROC(T = train.pan.data$OS,delta = train.pan.data$status,
+                   marker = train.pan.data$pan.nomoscore,cause = 1,times = 24,iid = T)
+validation.pan.data$pan.nomoscore<-points_cal(pannomoscore$formula,rd=validation.pan.data)
+dd<-datadist(validation.pan.data)
+options(datadist = 'dd')
+nobs<-NROW(validation.pan.data)
+pan_roc1 <- timeROC(T = validation.pan.data$OS,delta = validation.pan.data$status,
+                    marker = validation.pan.data$pan.nomoscore,cause = 1,times = 24,iid = T)
