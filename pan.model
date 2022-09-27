@@ -39,11 +39,11 @@ train.pan.data$pan.nomoscore<-points_cal(pannomoscore$formula,rd=train.pan.data)
 dd<-datadist(train.pan.data)
 options(datadist = 'dd')
 nobs<-NROW(train.pan.data)
-pan_roc <- timeROC(T = train.pan.data$OS,delta = train.pan.data$status,
-                   marker = train.pan.data$pan.nomoscore,cause = 1,times = 24,iid = T)
+pan.train.roc <- timeROC(T = train.pan.data$OS,delta = train.pan.data$status,
+                   marker = train.pan.data$pan.nomoscore,cause = 1,times = c(6,12,18,24,30,36),iid = T)
 validation.pan.data$pan.nomoscore<-points_cal(pannomoscore$formula,rd=validation.pan.data)
 dd<-datadist(validation.pan.data)
 options(datadist = 'dd')
 nobs<-NROW(validation.pan.data)
-pan_roc1 <- timeROC(T = validation.pan.data$OS,delta = validation.pan.data$status,
-                    marker = validation.pan.data$pan.nomoscore,cause = 1,times = 24,iid = T)
+pan.validation.roc <- timeROC(T = validation.pan.data$OS,delta = validation.pan.data$status,
+                    marker = validation.pan.data$pan.nomoscore,cause = 1,times = c(6,12,18,24,30,36),iid = T)
