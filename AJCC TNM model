@@ -1,0 +1,14 @@
+train.tnm.data <- train.data[,c(46,42,43,48)]
+validation.tnm.data <- validation.data[,c(46,42,43,48)]
+train.tnm.data$stage <- as.numeric(train.tnm.data$stage)
+validation.tnm.data$stage <- as.numeric(validation.tnm.data$stage)
+dd<-datadist(train.tnm.data)
+options(datadist = 'dd')
+nobs<-NROW(train.tnm.data)
+train.stage.roc <- timeROC(T = train.tnm.data$OS,delta = train.tnm.data$status,
+                     marker = train.tnm.data$stage,cause = 1,times = c(6,12,18,24,30,36),iid = T)
+dd<-datadist(validation.tnm.data)
+options(datadist = 'dd')
+nobs<-NROW(validation.tnm.data)
+validation.stage.roc1 <- timeROC(T = validation.tnm.data$OS,delta = validation.tnm.data$status,
+                      marker = validation.tnm.data$stage4,cause = 1,times = c(6,12,18,24,30,36),iid = T)
