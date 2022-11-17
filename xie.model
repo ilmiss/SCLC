@@ -55,3 +55,35 @@ nom2<-nomogram(coxvalils,fun=list(surv5,surv6,surv7),lp = F,
 nomoscore1<-formula_rd(nomogram = nom2)
 xie.lssclc.train$xie.ls.nomosco<-points_cal(nomoscore1$formula,rd=xie.lssclc.train)
 xie.lssclc.validation$xie.ls.nomosco<-points_cal(nomoscore1$formula,rd=xie.lssclc.validation)
+
+
+xie.essclc<-xie.data[xie.data$stage==2,]
+xie.essclc <- xie.essclc[,c(1,2,3,8,9,14,5,11,4,12)]
+xie.essclc$NLRnum <- log(xie.essclc$NLRnum)
+xie.essclc$RDWnum <- log(xie.essclc$RDWnum)
+xie.essclc$KPS <- ifelse(xie.essclc$KPS>=2,1,0)
+xie.essclc$M <- ifelse(xie.essclc$M==4,1,0)
+xie.essclc$livermetastases <- ifelse(xie.essclc$livermetastases==9,0,xie.essclc$livermetastases)
+xie.data <- merge.data.frame(xie.essclc,xie.group,by="patient_num")
+xie.essclc.train <- xie.data[xie.data$group=="Traning",]
+xie.essclc.validation <- xie.data[xie.data$group=="Validation",]
+
+dd<-datadist(xie.essclc.train)
+options(datadist = 'dd')
+nobs<-NROW(xie.essclc.train)
+coxvalies<-cph(Surv(OS,status)~age+KPS+RDWnum+NLRnum+RT+livermetastases+M,data = xie.essclc.train,surv = T)
+surv8 <- Survival(coxvalies)
+surv9 <- function(x)surv8(1*6,lp=x)
+surv10 <- function(x)surv8(1*12,lp=x)
+surv11 <- function(x)surv8(1*24,lp=x)
+
+nom3<-nomogram(coxvalies,fun=list(surv9,surv10,surv11),lp = F,
+               funlabel=c('6-Month Survival probability',
+                          '12-Month survival probability',
+                          '24-Month survival probability'),
+               maxscale=100,
+               fun.at=c('0.9','0.85','0.80','0.70','0.6',
+                        '0.5','0.4','0.3','0.2','0.1'))
+nomoscore2<-formula_rd(nomogram = nom3)
+xie.essclc.train$xie.es.nomosco<-points_cal(nomoscore2$formula,rd=xie.essclc.train)
+xie.essclc.validation$xie.es.nomosco<-points_cal(nomoscore2$formula,rd=xie.essclc.validation)
