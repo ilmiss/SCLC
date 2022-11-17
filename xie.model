@@ -1,0 +1,57 @@
+xie.data <- data.frame(group.data[,c(1,11,25,26,34,35,36,41,42,43,47,48,51,52)])
+xie.data$gender <- as.factor(xie.data$gender)
+xie.data$MON <- as.factor(xie.data$MON)
+xie.data$NSE <- as.factor(xie.data$NSE)
+xie.data$Cyfra211 <- as.factor(xie.data$Cyfra211)
+xie.data$M <- as.factor(xie.data$M)
+xie.data$RT <- as.factor(xie.data$RT)
+xie.data$CT_circle <- as.factor(xie.data$CT_circle)
+xie.data$PCI <- as.factor(xie.data$PCI)
+lssclc.data<-xie.data[xie.data$stage==1,]
+esclc.data<-xie.data[xie.data$stage==2,]
+dd<-datadist(lssclc.data)
+options(datadist = 'dd')
+nobs<-NROW(lssclc.data)
+y_rocls <- timeROC(T = lssclc.data$OS,delta = lssclc.data$status,
+                   marker = lssclc.data$cao.nomosco,cause = 1,times = 24,iid = T)
+dd<-datadist(esclc.data)
+options(datadist = 'dd')
+nobs<-NROW(esclc.data)
+y_roces <- timeROC(T = esclc.data$OS,delta = esclc.data$status,
+                   marker = esclc.data$cao.nomosco,cause = 1,times = 24,iid = T)
+###局限期 vs xie
+xie.data <- data.frame(all.data[,c(48,42,43,52,128,35,37,39,38,40,41,4,34,47)])
+xie.data$age <- all.data$年龄
+xie.data <- xie.data[,-4]
+xie.lssclc<-xie.data[xie.data$stage==1,]
+xie.lssclc <- xie.lssclc[,c(1,2,3,14,5,6,7,10)]
+xie.group <- group.data[,c(48,51,52)]
+xie.data <- merge.data.frame(xie.data,xie.group,by="patient_num")
+xie.data.train <- xie.data[xie.data$group=="Traning",]
+xie.data.validation <- xie.data[xie.data$group=="Validation",]
+xie.lssclc.train<-xie.data.train[xie.data.train$stage==1,]
+xie.lssclc.validation<-xie.data.validation[xie.data.validation$stage==1,]
+for (i in 4:8) {
+  a=xie.lssclc[,i]
+  if(colnames(xie.lssclc)[i]!="age"){
+    xie.lssclc[,i] <- as.factor(xie.lssclc[,i])
+  }
+}
+dd<-datadist(xie.lssclc.train)
+options(datadist = 'dd')
+nobs<-NROW(xie.lssclc.train)
+coxvalils<-cph(Surv(OS,status)~age+smoking_cessation+PLR+RT+PCI,data = xie.lssclc.train,surv = T)
+surv4 <- Survival(coxvalils)
+surv5 <- function(x)surv4(1*6,lp=x)
+surv6 <- function(x)surv4(1*12,lp=x)
+surv7 <- function(x)surv4(1*24,lp=x)
+nom2<-nomogram(coxvalils,fun=list(surv5,surv6,surv7),lp = F,
+               funlabel=c('6-Month Survival probability',
+                          '12-Month survival probability',
+                          '24-Month survival probability'),
+               maxscale=100,
+               fun.at=c('0.9','0.85','0.80','0.70','0.6',
+                        '0.5','0.4','0.3','0.2','0.1'))
+nomoscore1<-formula_rd(nomogram = nom2)
+xie.lssclc.train$xie.ls.nomosco<-points_cal(nomoscore1$formula,rd=xie.lssclc.train)
+xie.lssclc.validation$xie.ls.nomosco<-points_cal(nomoscore1$formula,rd=xie.lssclc.validation)
