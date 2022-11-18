@@ -1,0 +1,158 @@
+#ROC
+xie.ls.train.roc <- timeROC(T = xie.lssclc.train$OS,delta = xie.lssclc.train$status,
+                            marker = xie.lssclc.train$xie.ls.nomosco,cause = 1,times = c(6,12,18,24,30,36),iid = T)
+xie.es.train.roc <- timeROC(T = xie.essclc.train$OS,delta = xie.essclc.train$status,
+                    marker = xie.essclc.train$xie.es.nomosco,cause = 1,times = c(6,12,18,24,30,36),iid = T)
+pan.train.roc <- timeROC(T = train.pan.data$OS,delta = train.pan.data$status,
+                         marker = train.pan.data$pan.nomoscore,cause = 1,times = c(6,12,18,24,30,36),iid = T)
+stage.roc.train <- timeROC(T = train.tnm.data$OS,delta = train.tnm.data$status,
+                     marker = train.tnm.data$stage4,cause = 1,times = c(6,12,18,24,30,36),iid = T)
+cao.train.roc <- timeROC(T = train.data$OS,delta = train.data$status,
+                         marker = train.data$cao.nomosco,cause = 1,times = c(6,12,18,24,30,36),iid = T)
+plotAUCcurve(xie.ls.train.roc,col = "#233d4d")
+plotAUCcurve(xie.es.train.roc,col = "#fe7f2d",add = T)
+plotAUCcurve(pan.train.roc,col = "#fcca46",add = T)
+plotAUCcurve(stage.roc.train,col = "#a1c181",add = T)
+plotAUCcurve(cao.train.roc,col = "#619b8a",add = T)
+legend("topright",c(paste("LS-SCLC (Xie et.al 2015)"),
+                    paste("ES-SCLC (Xie et.al 2015)"),
+                    paste("All Patients (Pan et.al 2017)"),paste("All Patients (Nomogram Score)"),
+                    paste("All Patients (AJCC TNM Stage 8th)")),
+       x.intersp = 1,y.intersp = 0.8,lty = 1,lwd = 2,
+       col = c("#233d4d","#fe7f2d","#fcca46","#a1c181","#619b8a"),
+       bty = "n",seg.len = 1,cex = 0.8)
+
+
+xie.ls.validation.roc <- timeROC(T = xie.lssclc.validation$OS,delta = xie.lssclc.validation$status,
+                                 marker = xie.lssclc.validation$xie.ls.nomosco,cause = 1,times = c(6,12,18,24,30,36),iid = T)
+xie.es.validation.roc <- timeROC(T = xie.essclc.validation$OS,delta = xie.essclc.validation$status,
+                    marker = xie.essclc.validation$xie.es.nomosco,cause = 1,times = c(6,12,18,24,30,36),iid = T)
+pan.validation.roc <- timeROC(T = validation.pan.data$OS,delta = validation.pan.data$status,
+                               marker = validation.pan.data$pan.nomoscore,cause = 1,times = c(6,12,18,24,30,36),iid = T)
+stage.roc.validation <- timeROC(T = validation.tnm.data$OS,delta = validation.tnm.data$status,
+                      marker = validation.tnm.data$stage4,cause = 1,times = c(6,12,18,24,30,36),iid = T)
+cao.validation.roc <- timeROC(T = validation.data$OS,delta = validation.data$status,
+                              marker = validation.data$cao.nomosco,cause = 1,times = c(6,12,18,24,30,36),iid = T)
+
+plotAUCcurve(xie.ls.validation.roc,col = "#233d4d")
+plotAUCcurve(xie.es.validation.roc,col = "#fe7f2d",add = T)
+plotAUCcurve(pan.validation.roc,col = "#fcca46",add = T)
+plotAUCcurve(stage.roc.validation,col = "#a1c181",add = T)
+plotAUCcurve(cao.validation.roc,col = "#619b8a",add = T)
+legend("topright",c(paste("LS-SCLC (Xie et.al 2015)"),
+                    paste("ES-SCLC (Xie et.al 2015)"),
+                    paste("All Patients (Pan et.al 2017)"),paste("All Patients (Nomogram Score)"),
+                    paste("All Patients (AJCC TNM Stage 8th)")),
+       x.intersp = 1,y.intersp = 0.8,lty = 1,lwd = 2,
+       col = c("#233d4d","#fe7f2d","#fcca46","#a1c181","#619b8a"),
+       bty = "n",seg.len = 1,cex = 0.8)
+
+
+#DCA
+source("stdca.R")
+cao.ls.train.cph<-cph(Surv(OS,status)~cao.nomosco,x=T,y=T,
+               data = xie.lssclc.train,surv = T,time.inc = 24)
+xie.ls.train.cph<-cph(Surv(OS,status)~xie.ls.nomosco,x=T,y=T,
+                      data = xie.lssclc.train,surv = T,time.inc = 24)
+xie.lssclc.train$pr.failure.cao = c(1-(summary(survfit(cao.ls.train.cph, 
+                                                       newdata = xie.lssclc.train),
+                                               times = 24)$surv))
+xie.lssclc.train$pr.failure.xie = c(1-(summary(survfit(xie.ls.train.cph, 
+                                                       newdata = xie.lssclc.train),
+                                               times = 24)$surv))
+xie.lssclc.train$status = ifelse(xie.lssclc.train$status==1,1,0)
+stdca(data=xie.lssclc.train, outcome="status", ttoutcome="OS", timepoint=24, 
+      predictors=c("pr.failure.cao","pr.failure.xie"), 
+      xstop=0.7, smooth=TRUE)
+      
+      
+cao.ls.validation.cph<-cph(Surv(OS,status)~cao.nomosco,x=T,y=T,
+                      data = xie.lssclc.validation,surv = T,time.inc = 24)
+xie.ls.validation.cph<-cph(Surv(OS,status)~xie.ls.nomosco,x=T,y=T,
+                      data = xie.lssclc.validation,surv = T,time.inc = 24)
+xie.lssclc.validation$pr.failure.cao = c(1-(summary(survfit(cao.ls.validation.cph, 
+                                                       newdata = xie.lssclc.validation),
+                                               times = 24)$surv))
+xie.lssclc.validation$pr.failure.xie = c(1-(summary(survfit(xie.ls.validation.cph, 
+                                                       newdata = xie.lssclc.validation),
+                                               times = 24)$surv))
+xie.lssclc.validation$status = ifelse(xie.lssclc.validation$status==1,1,0)
+stdca(data=xie.lssclc.validation, outcome="status", ttoutcome="OS", timepoint=24, 
+      predictors=c("pr.failure.cao","pr.failure.xie"), 
+      xstop=0.7, smooth=TRUE)
+
+cao.es.train.cph<-cph(Surv(OS,status)~cao.nomosco,x=T,y=T,
+                      data = xie.essclc.train,surv = T,time.inc = 24)
+xie.es.train.cph<-cph(Surv(OS,status)~xie.es.nomosco,x=T,y=T,
+                      data = xie.essclc.train,surv = T,time.inc = 24)
+xie.essclc.train$pr.failure.cao = c(1-(summary(survfit(cao.es.train.cph, 
+                                                       newdata = xie.essclc.train),
+                                               times = 24)$surv))
+xie.essclc.train$pr.failure.xie = c(1-(summary(survfit(xie.es.train.cph, 
+                                                       newdata = xie.essclc.train),
+                                               times = 24)$surv))
+xie.essclc.train$status = ifelse(xie.essclc.train$status==1,1,0)
+stdca(data=xie.essclc.train, outcome="status", ttoutcome="OS", timepoint=24, 
+      predictors=c("pr.failure.cao","pr.failure.xie"), 
+      xstop=0.969, smooth=TRUE)
+                                               
+cao.es.validation.cph<-cph(Surv(OS,status)~cao.nomosco,x=T,y=T,
+                           data = xie.essclc.validation,surv = T,time.inc = 24)
+xie.es.validation.cph<-cph(Surv(OS,status)~xie.es.nomosco,x=T,y=T,
+                           data = xie.essclc.validation,surv = T,time.inc = 24)
+xie.essclc.validation$pr.failure.cao = c(1-(summary(survfit(cao.es.validation.cph, 
+                                                            newdata = xie.essclc.validation),
+                                                    times = 24)$surv))
+xie.essclc.validation$pr.failure.xie = c(1-(summary(survfit(xie.es.validation.cph, 
+                                                            newdata = xie.essclc.validation),
+                                                    times = 24)$surv))
+xie.essclc.validation$status = ifelse(xie.essclc.validation$status==1,1,0)
+stdca(data=xie.essclc.validation, outcome="status", ttoutcome="OS", timepoint=24, 
+      predictors=c("pr.failure.cao","pr.failure.xie"), 
+      xstop=0.969, smooth=TRUE)
+
+pan.train.cph<-cph(Surv(OS,status)~pan.nomoscore,x=T,y=T,
+                      data = train.pan.data,surv = T,time.inc = 24)
+tnm.train.cph<-cph(Surv(OS,status)~stage4,x=T,y=T,
+                      data = train.tnm.data,surv = T,time.inc = 24)
+cao.train.cph<-cph(Surv(OS,status)~cao.nomosco,x=T,y=T,
+                      data = train.data,surv = T,time.inc = 24)
+
+train.pan.data$pr.failure.pan = c(1-(summary(survfit(pan.train.cph, 
+                                                       newdata = train.pan.data),
+                                               times = 24)$surv))
+train.tnm.data$pr.failure.tnm = c(1-(summary(survfit(tnm.train.cph, 
+                                                       newdata = train.tnm.data),
+                                               times = 24)$surv))
+train.data$pr.failure.cao = c(1-(summary(survfit(cao.train.cph, 
+                                                       newdata = train.data),
+                                               times = 24)$surv))
+train.dca.data <- merge.data.frame(train.pan.data,train.tnm.data,by="patient_num")
+train.dca.data <- merge.data.frame(train.dca.data,train.data,by="patient_num")
+train.dca.data$status = ifelse(train.dca.data$status==1,1,0)
+stdca(data=train.dca.data, outcome="status", ttoutcome="OS", timepoint=24, 
+      predictors=c("pr.failure.pan","pr.failure.tnm","pr.failure.cao"), 
+      xstop=0.9, smooth=TRUE)
+
+pan.validation.cph<-cph(Surv(OS,status)~pan.nomoscore,x=T,y=T,
+                      data = validation.pan.data,surv = T,time.inc = 24)
+tnm.validation.cph<-cph(Surv(OS,status)~stage4,x=T,y=T,
+                      data = validation.tnm.data,surv = T,time.inc = 24)
+cao.validation.cph<-cph(Surv(OS,status)~cao.nomosco,x=T,y=T,
+                      data = validation.data,surv = T,time.inc = 24)
+
+validation.pan.data$pr.failure.pan = c(1-(summary(survfit(pan.validation.cph, 
+                                                     newdata = validation.pan.data),
+                                             times = 24)$surv))
+validation.tnm.data$pr.failure.tnm = c(1-(summary(survfit(tnm.validation.cph, 
+                                                     newdata = validation.tnm.data),
+                                             times = 24)$surv))
+validation.data$pr.failure.cao = c(1-(summary(survfit(cao.validation.cph, 
+                                                 newdata = validation.data),
+                                         times = 24)$surv))
+validation.dca.data <- merge.data.frame(validation.pan.data,validation.tnm.data,by="patient_num")
+validation.dca.data <- merge.data.frame(validation.dca.data,validation.data,by="patient_num")
+validation.dca.data$status = ifelse(validation.dca.data$status==1,1,0)
+stdca(data=validation.dca.data, outcome="status", ttoutcome="OS", timepoint=24, 
+      predictors=c("pr.failure.pan","pr.failure.tnm","pr.failure.cao"), 
+      xstop=0.9, smooth=TRUE)
