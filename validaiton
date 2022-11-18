@@ -47,6 +47,57 @@ legend("topright",c(paste("LS-SCLC (Xie et.al 2015)"),
        col = c("#233d4d","#fe7f2d","#fcca46","#a1c181","#619b8a"),
        bty = "n",seg.len = 1,cex = 0.8)
 
+#K-folds validation AUC
+cindex_train <- 0
+cindex_validation <- 0
+set.seed(1)
+K_folds=5
+train.data$random_num <- sample(1:nrow(train.data),nrow(train.data),replace=F)
+train.data$group <- train.data$random_num %% K_folds+1
+model_roc <- data.frame()
+for (i in min(train.data$group):max(train.data$group)) {
+  data.validation <- subset(train.data,train.data$group==i)
+  data.train <- subset(train.data,train.data$group!=i)
+  auc <- timeROC(T = data.train$OS,delta = data.train$status,marker = data.train$cao.nomosco,cause = 1,times = 24,iid = T)
+  train.roc <- round(auc$AUC[[2]],3)
+  auc <- timeROC(T = data.validation$OS,delta = data.validation$status,marker = data.validation$cao.nomosco,cause = 1,times = 24,iid = T)
+  validation.roc <- round(auc$AUC[[2]],3)
+  cindex_train[i] <- train.roc
+  cindex_validation[i] <- validation.roc
+  
+}
+model_roc <- data.frame("Training roc"=cindex_train,
+                        "Vlidation roc"=cindex_validation)
+summary(model_roc)
+
+#K-folds d-validation
+dcal.data <- rbind.data.frame(train.data.dcal,validation.data.dcal)
+evaluationResults = data.frame()
+K_folds=5
+dcal.data$random_num <- sample(1:nrow(dcal.data),nrow(dcal.data),replace=F)
+dcal.data$group <- dcal.data$random_num %% K_folds+1
+foldsAndNormalizedData = createFoldsAndNormalize(dcal.data, 5)
+normalizedData = foldsAndNormalizedData[[2]]
+for(i in min(dcal.data$group):max(dcal.data$group)){
+  testing = subset(dcal.data,dcal.data$group==i)
+  training = subset(dcal.data,dcal.data$group!=i)
+  coxMod = CoxPH_KP(training, testing)
+  if(length(coxMod) ==1){
+    combinedTestResults$Cox = list()
+    coxTimes = NULL
+    CoxKP = F
+    if(i > 1)
+      evaluationResults = with(evaluationResults,evaluationResults[-which(Model == "CoxKP"),])
+  }
+  else{
+    combinedTestResults$Cox[[i]] = coxMod
+    coxTimes = c(coxTimes,coxMod[[1]]$time)
+  }
+  coxTimes = c(coxTimes,coxMod[[1]]$time)
+  DCalResults = NULL;
+}
+coxDcal = DCalibrationCumulative(combinedTestResults$Cox,5)
+coxDcal
 
 #DCA
 source("stdca.R")
